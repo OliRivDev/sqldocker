@@ -7,7 +7,7 @@
     "start": "nodemon src/index.ts",
     "build": "tsc",
     "test": "mocha -r ts-node/register tests/**/*.test.ts",
-    "test:coverage": "nyc npm run test"
+    "test:coverage": "nyc npm run test -- --reporter mocha-junit-reporter"
   },
   "keywords": [],
   "author": "",
