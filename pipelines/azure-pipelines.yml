@@ -30,3 +30,13 @@ steps:
 - script: |
     npm run test:coverage
   displayName: 'Run tests and generate coverage'
+
+- task: PublishTestResults@2
+  inputs:
+    testResultsFormat: 'JUnit'
+    testResultsFiles: '**/test-results*.xml'
+
+- task: PublishCodeCoverageResults@1
+  inputs:
+    codeCoverageTool: 'JaCoCo'
+    summaryFileLocation: '$(System.DefaultWorkingDirectory)/**/cobertura-coverage.xml'
