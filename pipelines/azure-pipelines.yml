@@ -44,7 +44,7 @@ stages:
 
         - task: PublishCodeCoverageResults@1
           inputs:
-            codeCoverageTool: 'Cobertura'
+            codeCoverageTool: cobertura
             summaryFileLocation: '$(System.DefaultWorkingDirectory)/**/cobertura-coverage.xml'
 
         - task: CopyFiles@2
@@ -54,10 +54,7 @@ stages:
             TargetFolder: '$(build.artifactstagingdirectory)'
 
         - task: PublishBuildArtifacts@1
-          inputs:
-            PathtoPublish: '$(Build.ArtifactStagingDirectory)'
-            ArtifactName: 'drop'
-            publishLocation: 'Container'
+
 - stage: Deliver
   displayName: Deliver the docker image
   dependsOn: Build
