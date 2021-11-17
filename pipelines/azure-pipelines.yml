@@ -9,46 +9,70 @@ trigger:
 pool:
   vmImage: ubuntu-latest
 
-steps:
-- task: NodeTool@0
-  inputs:
-    versionSpec: '10.x'
-  displayName: 'Install Node.js'
+stages:
+- stage: 'Build'
+  displayName: 'Build the application'
+  jobs:
+    - job: 'Build'
+      displayName: 'Build job'
+      steps:
+        - task: NodeTool@0
+          inputs:
+            versionSpec: '10.x'
+          displayName: 'Install Node.js'
 
-- task: Npm@1
-  displayName: 'Audit dependencies'
-  inputs:
-    command: custom
-    verbose: false
-    customCommand: 'audit --registry=https://registry.npmjs.org/'
+        - task: Npm@1
+          displayName: 'Audit dependencies'
+          inputs:
+            command: custom
+            verbose: false
+            customCommand: 'audit --registry=https://registry.npmjs.org/'
 
-- script: |
-    npm install
-    npm run build
-  displayName: 'npm install and build'
+        - script: |
+            npm install
+            npm run build
+          displayName: 'npm install and build'
 
-- script: |
-    npm run test:coverage
-  displayName: 'Run tests and generate coverage'
+        - script: |
+            npm run test:coverage
+          displayName: 'Run tests and generate coverage'
 
-- task: PublishTestResults@2
-  inputs:
-    testResultsFormat: 'JUnit'
-    testResultsFiles: '**/test-results.xml'
+        - task: PublishTestResults@2
+          inputs:
+            testResultsFormat: 'JUnit'
+            testResultsFiles: '**/test-results.xml'
 
-- task: PublishCodeCoverageResults@1
-  inputs:
-    codeCoverageTool: 'Cobertura'
-    summaryFileLocation: '$(System.DefaultWorkingDirectory)/**/cobertura-coverage.xml'
+        - task: PublishCodeCoverageResults@1
+          inputs:
+            codeCoverageTool: 'Cobertura'
+            summaryFileLocation: '$(System.DefaultWorkingDirectory)/**/cobertura-coverage.xml'
 
-- task: CopyFiles@2
-  inputs:
-    SourceFolder: '$(System.DefaultWorkingDirectory)'
-    Contents: 'build/**'
-    TargetFolder: '$(build.artifactstagingdirectory)'
+        - task: CopyFiles@2
+          inputs:
+            SourceFolder: '$(System.DefaultWorkingDirectory)'
+            Contents: 'build/**'
+            TargetFolder: '$(build.artifactstagingdirectory)'
 
-- task: PublishBuildArtifacts@1
-  inputs:
-    PathtoPublish: '$(Build.ArtifactStagingDirectory)'
-    ArtifactName: 'drop'
-    publishLocation: 'Container'
+        - task: PublishBuildArtifacts@1
+          inputs:
+            PathtoPublish: '$(Build.ArtifactStagingDirectory)'
+            ArtifactName: 'drop'
+            publishLocation: 'Container'
+- stage: Deliver
+  displayName: Deliver the docker image
+  dependsOn: Build
+  jobs:
+    - job: Build
+      displayName: 'Build docker image'
+      pool:
+        vmImage: 'ubuntu-latest'
+      steps:
+      - task: Docker@2
+        inputs:
+          containerRegistry: 'WayrexDocker'
+          repository: 'wayrex/expresstest'
+          command: 'buildAndPush'
+          Dockerfile: '**/Dockerfile'
+          tags: |
+            latest
+            $(Build.BuildId)
